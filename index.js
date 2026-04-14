@@ -256,7 +256,7 @@ async function askGemini(jid, userText) {
           temperature: 0.7,
           topP: 0.9,
           topK: 40,
-          maxOutputTokens: 280
+          maxOutputTokens: 1024
         }
       },
       {
