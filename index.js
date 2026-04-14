@@ -12,142 +12,108 @@ const {
 
 const express = require('express');
 const axios = require('axios');
+const QRCode = require('qrcode'); // Untuk generate gambar QR
+const pino = require('pino');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const AUTH_DIR = process.env.AUTH_DIR || './auth';
-const BOT_NAME = process.env.BOT_NAME || 'PanelSosial CS';
 const ADMIN_CONTACT = process.env.ADMIN_CONTACT || '-';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+let qrCodeBase64 = null; // Simpan QR di sini
 let isConnected = false;
 
-// 🔐 SYSTEM PROMPT (INI OTAK BOT)
-const SYSTEM_PROMPT = `
-Kamu adalah customer service profesional, ramah, dan sopan dari PanelSosial.
-
-Gaya bicara:
-- Gunakan bahasa Indonesia santai tapi sopan
-- Gunakan kata "kak"
-- Ramah, membantu, tidak kaku
-- Jangan terlalu panjang
-
-WAJIB IKUTI RULE INI:
-- Kita menjual OTP / nomor virtual, bukan akun
-- Jangan pernah bilang kita jual akun
-- OTP masuk = transaksi selesai
-- Refund hanya jika OTP tidak masuk sampai masa aktif habis
-- Banned/suspend/limit akun adalah tanggung jawab user
-- Jangan janji OTP pasti masuk
-- Jangan janji akun aman
-
-Jika user marah:
-- tetap tenang
-- jangan defensif
-- bantu arahkan solusi
-
-Jika tidak yakin:
-- arahkan ke admin: ${ADMIN_CONTACT}
-
-Gunakan informasi berikut sebagai dasar:
-
-${`Ketentuan Layanan:
-- PanelSosial hanya menyediakan nomor virtual untuk OTP
-- Tidak menjamin semua OTP berhasil
-- Nomor bersifat sementara
-- Refund hanya jika OTP tidak masuk
-- Setelah OTP masuk atau 20 menit → selesai
-- Semua risiko akun ditanggung user
-- Dilarang penggunaan ilegal
-- Kami menjaga privasi user
-`}
-
-Selalu tekankan:
-"Kami menyediakan OTP, bukan akun"
-`;
-
-// 🤖 CALL GEMINI
+// 🤖 FUNGSI PANGGIL GEMINI
 async function askAI(text) {
   try {
     const res = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
-        contents: [
-          {
-            parts: [
-              { text: SYSTEM_PROMPT },
-              { text: text }
-            ]
-          }
-        ]
+        contents: [{
+          role: "user",
+          parts: [{ text: `System: Kamu CS PanelSosial profesional. Jual OTP, bukan akun. Admin: ${ADMIN_CONTACT}\nUser: ${text}` }]
+        }]
       }
     );
-
-    return res.data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf kak, sistem sedang sibuk. Coba lagi ya 🙏';
+    return res.data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf kak, lagi sibuk nih. Coba lagi ya.';
   } catch (err) {
-    console.error(err.message);
-    return 'Maaf kak, sistem sedang error. Silakan hubungi admin 🙏';
+    return 'Maaf kak, koneksi AI terganggu. Hubungi admin ya.';
   }
 }
 
 // 🚀 START BOT
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
     auth: state,
-    version
-  });
-
-  sock.ev.on('connection.update', ({ connection }) => {
-    if (connection === 'open') {
-      isConnected = true;
-      console.log('✅ Bot connected');
-    }
-
-    if (connection === 'close') {
-      isConnected = false;
-      setTimeout(startBot, 5000);
-    }
+    version,
+    logger: pino({ level: 'silent' })
   });
 
   sock.ev.on('creds.update', saveCreds);
 
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    try {
-      const m = messages[0];
-      if (!m.message || m.key.fromMe) return;
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
 
-      const jid = m.key.remoteJid;
-
-      const text =
-        m.message.conversation ||
-        m.message.extendedTextMessage?.text;
-
-      if (!text) return;
-
-      console.log('📩', text);
-
-      const reply = await askAI(text);
-
-      await sock.sendMessage(jid, { text: reply });
-
-    } catch (err) {
-      console.error(err);
+    if (qr) {
+      // Ubah string QR jadi gambar Base64 agar bisa tampil di browser
+      qrCodeBase64 = await QRCode.toDataURL(qr);
+      console.log('--- QR Code diperbarui, cek di browser! ---');
     }
+
+    if (connection === 'open') {
+      isConnected = true;
+      qrCodeBase64 = null; // Hapus QR setelah login
+      console.log('✅ Bot Terhubung!');
+    }
+
+    if (connection === 'close') {
+      isConnected = false;
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      if (shouldReconnect) startBot();
+    }
+  });
+
+  sock.ev.on('messages.upsert', async ({ messages }) => {
+    const m = messages[0];
+    if (!m.message || m.key.fromMe) return;
+
+    const jid = m.key.remoteJid;
+    const text = m.message.conversation || m.message.extendedTextMessage?.text;
+    if (!text) return;
+
+    await sock.sendPresenceUpdate('composing', jid);
+    const reply = await askAI(text);
+    await sock.sendMessage(jid, { text: reply });
   });
 }
 
-// 🌐 WEB
+// 🌐 Tampilan Public Railway
 app.get('/', (req, res) => {
-  res.send('Bot aktif');
+  if (isConnected) {
+    res.send(`
+      <body style="font-family:sans-serif; text-align:center; padding:50px;">
+        <h1 style="color:green;">✅ Bot Aktif!</h1>
+        <p>Bot PanelSosial sudah terhubung ke WhatsApp.</p>
+      </body>
+    `);
+  } else if (qrCodeBase64) {
+    res.send(`
+      <body style="font-family:sans-serif; text-align:center; padding:50px;">
+        <h1>Scan QR Code</h1>
+        <p>Silakan scan untuk menyambungkan bot ke WhatsApp:</p>
+        <img src="${qrCodeBase64}" style="border: 10px solid #f0f0f0; border-radius:10px;" />
+        <p><i>QR akan otomatis berganti jika expired, silakan refresh halaman berkala.</i></p>
+      </body>
+    `);
+  } else {
+    res.send('<h1>Sedang memuat QR...</h1><p>Tunggu sebentar atau coba refresh.</p>');
+  }
 });
 
 startBot();
-
-app.listen(PORT, () => {
-  console.log('Server running', PORT);
-});
+app.listen(PORT, () => console.log(`Server aktif di port ${PORT}`));
