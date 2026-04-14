@@ -377,48 +377,34 @@ async function startBot() {
   const sock = makeWASocket({ auth: state });
 
   sock.ev.on('connection.update', (update) => {
-  const { qr, connection, lastDisconnect } = update;
+    const { qr, connection, lastDisconnect } = update;
 
-  console.log('connection.update:', {
-    connection,
-    hasQr: !!qr,
-    statusCode: lastDisconnect?.error?.output?.statusCode,
-    error: lastDisconnect?.error?.message
-  });
+    console.log('connection.update:', {
+      connection,
+      hasQr: !!qr,
+      statusCode: lastDisconnect?.error?.output?.statusCode,
+      error: lastDisconnect?.error?.message
+    });
 
-  if (qr) {
-    qrCodeString = qr;
-    isConnected = false;
-    console.log('QR received');
-  }
-
-  if (connection === 'open') {
-    isConnected = true;
-    qrCodeString = null;
-    console.log('Connected');
-  }
-
-  if (connection === 'close') {
-    isConnected = false;
-    qrCodeString = null;
-    const statusCode = lastDisconnect?.error?.output?.statusCode;
-    const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-    console.log('Disconnected, reconnect:', shouldReconnect);
-    if (shouldReconnect) {
-      setTimeout(startBot, 5000);
-    }
-  }
-});
+    if (qr) {
+      qrCodeString = qr;
+      isConnected = false;
+      console.log('\n═══════════════════════════════════════════');
+      console.log(`📱 QR Code ${BOT_NAME}`);
+      console.log('═══════════════════════════════════════════\n');
+      qrcode.generate(qr, { small: true });
       console.log('\nScan QR dari WhatsApp > Perangkat tertaut > Tautkan perangkat\n');
     }
 
     if (connection === 'open') {
       isConnected = true;
+      qrCodeString = null;
       console.log(`✅ ${BOT_NAME} terhubung dan siap digunakan.`);
     }
 
     if (connection === 'close') {
       isConnected = false;
+      qrCodeString = null;
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       console.log(`⚠️ Koneksi terputus. Reconnect: ${shouldReconnect ? 'ya' : 'tidak'}`);
@@ -520,8 +506,7 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${BOT_NAME}</title>
         <style>${baseStyle}</style>
-      <meta http-equiv="refresh" content="3" />
-</head>
+      </head>
       <body>
         <div class="container">
           <div class="badge">✅ BOT TERHUBUNG</div>
@@ -555,8 +540,7 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Scan QR - ${BOT_NAME}</title>
         <style>${baseStyle}</style>
-      <meta http-equiv="refresh" content="3" />
-</head>
+      </head>
       <body>
         <div class="container">
           <h1>Scan QR WhatsApp</h1>
@@ -585,12 +569,12 @@ app.get('/', (req, res) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${BOT_NAME}</title>
       <style>${baseStyle}</style>
-    <meta http-equiv="refresh" content="3" />
-</head>
+      <meta http-equiv="refresh" content="3" />
+    </head>
     <body>
       <div class="container">
         <h1>${BOT_NAME}</h1>
-        <p>Bot sedang menyiapkan sesi WhatsApp. Tunggu beberapa detik sampai QR muncul.</p>
+        <p>Bot sedang menyiapkan sesi WhatsApp. Halaman akan refresh otomatis sampai QR muncul.</p>
       </div>
     </body>
     </html>
