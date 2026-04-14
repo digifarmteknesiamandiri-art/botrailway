@@ -1,4 +1,4 @@
-const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 
@@ -374,7 +374,22 @@ function resolveReply(messageText) {
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
-  const sock = makeWASocket({ auth: state });
+  let version;
+  let isLatest = false;
+
+  try {
+    const latest = await fetchLatestBaileysVersion();
+    version = latest.version;
+    isLatest = latest.isLatest;
+    console.log('Baileys WA version:', version.join('.'), 'isLatest:', isLatest);
+  } catch (err) {
+    console.error('Gagal mengambil versi WA terbaru, lanjut pakai default Baileys:', err?.message || err);
+  }
+
+  const sock = makeWASocket({
+    auth: state,
+    ...(version ? { version } : {})
+  });
 
   sock.ev.on('connection.update', (update) => {
     const { qr, connection, lastDisconnect } = update;
@@ -448,143 +463,4 @@ async function startBot() {
   });
 }
 
-startBot().catch((err) => {
-  console.error('❌ Bot gagal dijalankan:', err);
-});
 
-app.get('/', (req, res) => {
-  const baseStyle = `
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      margin: 0;
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white;
-    }
-    .container {
-      background: white;
-      color: #222;
-      padding: 28px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      max-width: 760px;
-      margin: 40px auto;
-    }
-    h1 { color: #128c7e; }
-    .badge {
-      display: inline-block;
-      padding: 10px 16px;
-      border-radius: 999px;
-      background: #25d366;
-      color: white;
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
-    .card {
-      text-align: left;
-      background: #f6f8f8;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 16px;
-      line-height: 1.6;
-    }
-    .muted { color: #666; }
-    code {
-      background: #eef4f3;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-  `;
-
-  if (isConnected) {
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${BOT_NAME}</title>
-        <style>${baseStyle}</style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="badge">✅ BOT TERHUBUNG</div>
-          <h1>${BOT_NAME}</h1>
-          <p>Bot WhatsApp aktif dan siap membalas chat customer.</p>
-          <div class="card">
-            <strong>Fitur utama:</strong><br />
-            • Greeting otomatis<br />
-            • FAQ OTP, refund, banned, komplain, TOS, privasi<br />
-            • Penegasan layanan: jual OTP, bukan akun<br />
-            • Cocok untuk customer service layanan OTP
-          </div>
-          <div class="card">
-            <strong>Kata kunci yang tersedia:</strong><br />
-            <code>menu</code> <code>otp</code> <code>cara beli</code> <code>cara pakai</code> <code>refund</code> <code>komplain</code> <code>banned</code> <code>platform</code> <code>nomor</code> <code>tos</code> <code>privasi</code> <code>admin</code>
-          </div>
-          <p class="muted">Admin: ${ADMIN_CONTACT}</p>
-        </div>
-      </body>
-      </html>
-    `);
-    return;
-  }
-
-  if (qrCodeString) {
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="id">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Scan QR - ${BOT_NAME}</title>
-        <style>${baseStyle}</style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>Scan QR WhatsApp</h1>
-          <p>Gunakan WhatsApp di ponsel Anda untuk menautkan bot.</p>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrCodeString)}" alt="QR Code" style="border: 6px solid #25d366; border-radius: 16px; max-width: 100%;" />
-          <div class="card">
-            <strong>Langkah scan:</strong><br />
-            1. Buka WhatsApp di ponsel<br />
-            2. Buka menu titik tiga<br />
-            3. Pilih <em>Perangkat tertaut</em><br />
-            4. Pilih <em>Tautkan perangkat</em><br />
-            5. Scan QR di halaman ini
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
-    return;
-  }
-
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${BOT_NAME}</title>
-      <style>${baseStyle}</style>
-      <meta http-equiv="refresh" content="3" />
-    </head>
-    <body>
-      <div class="container">
-        <h1>${BOT_NAME}</h1>
-        <p>Bot sedang menyiapkan sesi WhatsApp. Halaman akan refresh otomatis sampai QR muncul.</p>
-      </div>
-    </body>
-    </html>
-  `);
-});
-
-app.listen(PORT, () => {
-  console.log(`🌐 Web server aktif di port ${PORT}`);
-});
-
-setInterval(() => {
-  console.log(`💓 ${BOT_NAME} masih berjalan...`);
-}, 300000);
