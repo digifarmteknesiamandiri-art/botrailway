@@ -22,7 +22,7 @@ const BRAND_NAME = process.env.BRAND_NAME || 'PanelSosial';
 const BOT_NAME = process.env.BOT_NAME || `${BRAND_NAME} CS`;
 const ADMIN_CONTACT = process.env.ADMIN_CONTACT || '-';
 
-const AI_ENDPOINT = process.env.AI_ENDPOINT || 'https://ai.hardianalele.workers.dev/chat';
+const AI_ENDPOINT = process.env.AI_ENDPOINT || 'https://mute-leaf-0298.digifarmteknesiamandiri.workers.dev/chat';
 const AI_TOKEN = process.env.AI_TOKEN || '123123';
 
 let qrCodeString = null;
