@@ -311,18 +311,20 @@ async function sendMainMenu(sock, jid) {
   const text = [
     `Halo kak 👋 Selamat datang di *${BOT_NAME}*`,
     '',
-    `Kami siap bantu seputar jasa OTP / nomor virtual dari *${BRAND_NAME}*.`,
+    `Ini adalah media pembelajaran psikologi bersama *Dr. Danang Baskoro, Psikolog*.`,
     '',
-    'Silakan pilih menu di bawah atau langsung ketik pertanyaannya ya 😊'
+    'Kakak bisa belajar berbagai topik seperti trauma, self healing, depresi, relasi, dan pengembangan diri.',
+    '',
+    'Silakan langsung ketik topik yang ingin dipelajari ya 😊'
   ].join('\n');
 
   try {
     await sock.sendMessage(jid, {
       text,
-      footer: `${BRAND_NAME} • jasa OTP, bukan jual akun`,
+      footer: `${BRAND_NAME} • media pembelajaran psikologi`,
       buttons: [
         { buttonId: 'menu', buttonText: { displayText: 'Menu' }, type: 1 },
-        { buttonId: 'refund', buttonText: { displayText: 'Refund' }, type: 1 },
+        { buttonId: 'video', buttonText: { displayText: 'Video' }, type: 1 },
         { buttonId: 'admin', buttonText: { displayText: 'Admin' }, type: 1 }
       ],
       headerType: 1
@@ -332,7 +334,6 @@ async function sendMainMenu(sock, jid) {
     await sock.sendMessage(jid, { text: STATIC_RESPONSES.menu });
   }
 }
-
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
@@ -538,20 +539,51 @@ app.get('/', (req, res) => {
         <div class="container">
           <h1>${BOT_NAME}</h1>
           <div class="badge ok">Bot terhubung ke WhatsApp ✅</div>
-          <p>Bot aktif dan siap membalas pesan pelanggan dengan bantuan AI.</p>
+          
+          <p>
+            Bot aktif dan siap membantu pengguna dalam menemukan 
+            media pembelajaran psikologi bersama 
+            <strong>Dr. Danang Baskoro, Psikolog</strong>.
+          </p>
+
           <div class="grid">
-            <div class="card"><strong>Status</strong><br/>Online & siap menerima chat</div>
-            <div class="card"><strong>Uptime</strong><br/>${getUptime()}</div>
-            <div class="card"><strong>AI Endpoint</strong><br/>${AI_ENDPOINT}</div>
-            <div class="card"><strong>Admin</strong><br/>${ADMIN_CONTACT}</div>
+            <div class="card">
+              <strong>Status</strong><br/>
+              Online & siap membantu pengguna
+            </div>
+
+            <div class="card">
+              <strong>Uptime</strong><br/>
+              ${getUptime()}
+            </div>
+
+            <div class="card">
+              <strong>AI Endpoint</strong><br/>
+              ${AI_ENDPOINT}
+            </div>
+
+            <div class="card">
+              <strong>Admin</strong><br/>
+              ${ADMIN_CONTACT}
+            </div>
           </div>
-          <p class="muted" style="margin-top:18px;">Catatan: ${BRAND_NAME} menyediakan jasa OTP / nomor virtual, bukan jual akun.</p>
+
+          <div class="card" style="margin-top:16px;">
+            <strong>Fitur Utama</strong><br/>
+            • Rekomendasi video psikologi berdasarkan topik<br/>
+            • Akses channel YouTube Dr. Danang Baskoro<br/>
+            • Panduan pembelajaran (trauma, healing, depresi, dll)
+          </div>
+
+          <p class="muted" style="margin-top:18px;">
+            Catatan: Layanan ini bersifat edukatif dan tidak menggantikan 
+            konsultasi atau penanganan profesional secara langsung.
+          </p>
         </div>
       </body>
       </html>
     `);
   }
-
   if (qrCodeString) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrCodeString)}`;
     return res.send(`
@@ -580,25 +612,39 @@ app.get('/', (req, res) => {
   }
 
   return res.send(`
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${BOT_NAME}</title>
-      <style>${baseStyle}</style>
-      <meta http-equiv="refresh" content="3" />
-    </head>
-    <body>
-      <div class="container">
-        <h1>${BOT_NAME}</h1>
-        <div class="badge">Menyiapkan sesi WhatsApp</div>
-        <p>Bot sedang menyiapkan sesi. Tunggu beberapa detik sampai QR muncul.</p>
-        <p class="muted">AI mode aktif. Kami menyediakan jasa OTP / nomor virtual, bukan jual akun.</p>
-      </div>
-    </body>
-    </html>
-  `);
+  <!DOCTYPE html>
+  <html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${BOT_NAME}</title>
+    <style>${baseStyle}</style>
+    <meta http-equiv="refresh" content="3" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>${BOT_NAME}</h1>
+      
+      <div class="badge">Menyiapkan sesi WhatsApp ⏳</div>
+      
+      <p>
+        Bot sedang menyiapkan koneksi WhatsApp. 
+        Silakan tunggu beberapa detik sampai QR code muncul.
+      </p>
+
+      <p>
+        Setelah terhubung, bot akan membantu pengguna menemukan 
+        media pembelajaran psikologi bersama 
+        <strong>Dr. Danang Baskoro, Psikolog</strong>.
+      </p>
+
+      <p class="muted">
+        Mode AI aktif • Fokus pada edukasi psikologi dan rekomendasi materi pembelajaran
+      </p>
+    </div>
+  </body>
+  </html>
+`);
 });
 
 startBot().catch((err) => {
