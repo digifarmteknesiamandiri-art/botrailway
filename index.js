@@ -42,27 +42,110 @@ const STATIC_RESPONSES = {
     `📋 *Menu Bantuan ${BOT_NAME}*`,
     '',
     'Silakan pilih topik yang ingin ditanyakan:',
-    '• *otp* → info layanan OTP',
-    '• *cara beli* → cara order',
-    '• *refund* → aturan refund',
-    '• *komplain* → OTP belum masuk',
-    '• *banned* → akun kena suspend / limit',
-    '• *admin* → hubungi CS',
-    '• *tos* → syarat & ketentuan',
+    '• *tentang* → info media pembelajaran',
+    '• *video* → rekomendasi video pembelajaran',
+    '• *topik* → daftar topik psikologi',
+    '• *trauma* → materi seputar trauma psikologis',
+    '• *healing* → materi self healing & pemulihan diri',
+    '• *depresi* → materi depresi & kesehatan mental',
+    '• *remaja* → materi remaja, parenting, dan pengembangan diri',
+    '• *channel* → link channel YouTube resmi',
+    '• *admin* → hubungi admin / pihak resmi',
+    '• *ketentuan* → ketentuan penggunaan layanan',
     '',
-    'Atau tinggal tulis pertanyaan kakak seperti biasa ya 😊'
+    'Atau kakak bisa langsung tulis topik yang ingin dipelajari ya 😊'
   ].join('\n'),
+
+  tentang: [
+    `🧠 *Tentang ${BOT_NAME}*`,
+    '',
+    `${BOT_NAME} adalah media pembelajaran psikologi bersama Dr. Danang Baskoro, Psikolog.`,
+    'Kami membantu kakak menemukan materi edukatif berupa video, pembahasan topik psikologi, dan arahan belajar yang relevan.',
+    '',
+    'Fokus kami adalah pembelajaran dan edukasi psikologi, bukan diagnosis atau layanan penanganan klinis langsung.'
+  ].join('\n'),
+
+  channel: [
+    '🎥 *Channel YouTube Resmi*',
+    '',
+    'Kakak bisa mengakses media pembelajaran psikologi Dr. Danang Baskoro, Psikolog melalui channel resmi berikut:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Di channel tersebut tersedia ratusan video pembelajaran dengan berbagai topik psikologi.'
+  ].join('\n'),
+
+  video: [
+    '🎬 *Rekomendasi Akses Video*',
+    '',
+    'Untuk memudahkan belajar, kakak bisa langsung buka channel resmi Dr. Danang Baskoro, Psikolog:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Lalu cari topik sesuai kebutuhan, misalnya: trauma, self healing, depresi, kecemasan, relasi, parenting, atau remaja.'
+  ].join('\n'),
+
+  topik: [
+    '📚 *Topik Pembelajaran Psikologi*',
+    '',
+    'Beberapa topik yang bisa kakak pelajari:',
+    '• trauma psikologis',
+    '• self healing',
+    '• depresi dan kecemasan',
+    '• overthinking dan emosi',
+    '• relasi dan kehidupan pribadi',
+    '• parenting dan remaja',
+    '• pengembangan diri',
+    '',
+    'Silakan ketik topik yang ingin kakak cari ya.'
+  ].join('\n'),
+
+  trauma: [
+    '🧩 *Materi Trauma Psikologis*',
+    '',
+    'Untuk materi trauma psikologis, kakak bisa mulai dari channel resmi Dr. Danang Baskoro, Psikolog:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Silakan gunakan kata kunci seperti: trauma, luka batin, masa kecil, atau pemulihan emosi.'
+  ].join('\n'),
+
+  healing: [
+    '🌿 *Materi Self Healing*',
+    '',
+    'Untuk pembelajaran tentang self healing dan pemulihan diri, kakak bisa cek channel resmi berikut:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Coba cari dengan kata kunci: self healing, pemulihan diri, emosi, atau proses bertumbuh.'
+  ].join('\n'),
+
+  depresi: [
+    '💙 *Materi Depresi & Kesehatan Mental*',
+    '',
+    'Kakak bisa menemukan materi pembelajaran terkait depresi dan kesehatan mental di channel resmi:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Silakan cari menggunakan kata kunci: depresi, kecemasan, stres, atau kesehatan mental.'
+  ].join('\n'),
+
+  remaja: [
+    '👨‍👩‍👧 *Materi Remaja, Parenting, dan Pengembangan Diri*',
+    '',
+    'Untuk topik remaja, parenting, dan pengembangan diri, kakak bisa belajar melalui channel resmi berikut:',
+    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    '',
+    'Silakan telusuri video sesuai kebutuhan pembelajaran kakak.'
+  ].join('\n'),
+
   admin: [
-    '👨‍💼 *Kontak Admin*',
+    '👨‍💼 *Kontak Admin / Pihak Resmi*',
     '',
     `Silakan hubungi admin di: ${ADMIN_CONTACT}`,
     '',
     'Agar dibantu lebih cepat, mohon sertakan:',
-    '• layanan yang dibeli',
-    '• waktu order',
-    '• status di riwayat order',
-    '• kendala yang dialami'
+    '• topik yang ingin dicari',
+    '• kendala yang dialami',
+    '• link atau materi yang sedang dicari',
+    '• pertanyaan yang ingin ditanyakan'
   ].join('\n'),
+
   status: () => [
     `🤖 *Status ${BOT_NAME}*`,
     '',
@@ -70,35 +153,38 @@ const STATIC_RESPONSES = {
     `• Uptime: ${getUptime()}`,
     `• Admin: ${ADMIN_CONTACT}`,
     '',
-    'Bot aktif dan siap membantu pelanggan.'
+    'Bot aktif dan siap membantu pencarian media pembelajaran psikologi.'
   ].join('\n'),
-  tos: () => buildTosText()
+
+  ketentuan: () => buildTermsText()
 };
 
-function buildTosText() {
+function buildTermsText() {
   return [
-    `📜 *Ketentuan Layanan ${BRAND_NAME}*`,
+    `📜 *Ketentuan Penggunaan ${BRAND_NAME}*`,
     '',
     '*1. Umum*',
-    'Dengan menggunakan layanan ini, pengguna dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan yang berlaku.',
+    'Dengan menggunakan layanan ini, pengguna dianggap telah membaca, memahami, dan menyetujui ketentuan yang berlaku.',
     '',
-    '*2. Layanan*',
-    `${BRAND_NAME} menyediakan layanan nomor virtual / temporary number untuk menerima SMS OTP dari platform pihak ketiga. Kami bukan penyedia layanan telekomunikasi resmi dan tidak terafiliasi dengan operator seluler manapun.`,
+    '*2. Fokus Layanan*',
+    `${BRAND_NAME} merupakan media pembelajaran psikologi bersama Dr. Danang Baskoro, Psikolog. Layanan ini ditujukan untuk edukasi, referensi materi, dan arahan pembelajaran psikologi.`,
     '',
-    '*3. Pembelian dan Refund*',
-    'Saldo dipotong saat nomor berhasil dibeli. Refund hanya berlaku jika OTP tidak diterima sampai masa aktif nomor berakhir. Jika OTP sudah diterima atau sudah melewati 20 menit sejak pembelian, layanan dianggap selesai.',
+    '*3. Batasan Layanan*',
+    'Informasi yang diberikan bersifat edukatif dan tidak menggantikan diagnosis, asesmen, konseling, psikoterapi, atau penanganan profesional secara langsung.',
     '',
     '*4. Tanggung Jawab Pengguna*',
-    'Segala bentuk banned, suspend, pemblokiran, pembatasan, kehilangan akses akun, atau kendala dari platform pihak ketiga menjadi tanggung jawab pengguna.',
+    'Pengguna bertanggung jawab untuk menggunakan materi pembelajaran secara bijak sesuai kebutuhan masing-masing.',
     '',
-    '*5. Penegasan Utama*',
-    'Kami menyediakan jasa OTP / nomor virtual, *bukan jual akun*.',
+    '*5. Bantuan Lanjutan*',
+    'Jika membutuhkan bantuan lebih lanjut yang bersifat personal atau profesional, pengguna disarankan menghubungi admin atau pihak resmi yang tersedia.',
     '',
-    '*6. Privasi*',
-    'Data pengguna hanya digunakan untuk keperluan operasional layanan dan tidak dijual kepada pihak lain, kecuali bila diwajibkan oleh hukum.'
+    '*6. Sumber Konten*',
+    'Materi pembelajaran dapat berupa video YouTube, webinar, dan konten edukasi psikologi lainnya dari Dr. Danang Baskoro, Psikolog.',
+    '',
+    '*7. Privasi*',
+    'Data pengguna hanya digunakan untuk keperluan operasional layanan dan tidak dibagikan kepada pihak lain, kecuali bila diwajibkan oleh hukum.'
   ].join('\n');
 }
-
 function normalizeText(text = '') {
   return text
     .toLowerCase()
