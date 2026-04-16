@@ -18,12 +18,18 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 const AUTH_DIR = process.env.AUTH_DIR || './auth';
+
 const BRAND_NAME = process.env.BRAND_NAME || 'Asisten AI Dr. Danang Baskoro, Psikolog';
-const BOT_NAME = process.env.BOT_NAME || `${BRAND_NAME} CS`;
+const BOT_NAME = process.env.BOT_NAME || `${BRAND_NAME}`;
 const ADMIN_CONTACT = process.env.ADMIN_CONTACT || '-';
 
 const AI_ENDPOINT = process.env.AI_ENDPOINT || 'https://mute-leaf-0298.digifarmteknesiamandiri.workers.dev/chat';
 const AI_TOKEN = process.env.AI_TOKEN || '123123';
+
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
+const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || '';
+const YOUTUBE_CHANNEL_URL =
+  process.env.YOUTUBE_CHANNEL_URL || 'https://www.youtube.com/@DanangBaskoroPsikolog';
 
 let qrCodeString = null;
 let isConnected = false;
@@ -48,6 +54,7 @@ const STATIC_RESPONSES = {
     '• *trauma* → materi seputar trauma psikologis',
     '• *healing* → materi self healing & pemulihan diri',
     '• *depresi* → materi depresi & kesehatan mental',
+    '• *cemas* → materi kecemasan & overthinking',
     '• *remaja* → materi remaja, parenting, dan pengembangan diri',
     '• *channel* → link channel YouTube resmi',
     '• *admin* → hubungi admin / pihak resmi',
@@ -69,7 +76,7 @@ const STATIC_RESPONSES = {
     '🎥 *Channel YouTube Resmi*',
     '',
     'Kakak bisa mengakses media pembelajaran psikologi Dr. Danang Baskoro, Psikolog melalui channel resmi berikut:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Di channel tersebut tersedia ratusan video pembelajaran dengan berbagai topik psikologi.'
   ].join('\n'),
@@ -78,7 +85,7 @@ const STATIC_RESPONSES = {
     '🎬 *Rekomendasi Akses Video*',
     '',
     'Untuk memudahkan belajar, kakak bisa langsung buka channel resmi Dr. Danang Baskoro, Psikolog:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Lalu cari topik sesuai kebutuhan, misalnya: trauma, self healing, depresi, kecemasan, relasi, parenting, atau remaja.'
   ].join('\n'),
@@ -102,7 +109,7 @@ const STATIC_RESPONSES = {
     '🧩 *Materi Trauma Psikologis*',
     '',
     'Untuk materi trauma psikologis, kakak bisa mulai dari channel resmi Dr. Danang Baskoro, Psikolog:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Silakan gunakan kata kunci seperti: trauma, luka batin, masa kecil, atau pemulihan emosi.'
   ].join('\n'),
@@ -111,7 +118,7 @@ const STATIC_RESPONSES = {
     '🌿 *Materi Self Healing*',
     '',
     'Untuk pembelajaran tentang self healing dan pemulihan diri, kakak bisa cek channel resmi berikut:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Coba cari dengan kata kunci: self healing, pemulihan diri, emosi, atau proses bertumbuh.'
   ].join('\n'),
@@ -120,16 +127,25 @@ const STATIC_RESPONSES = {
     '💙 *Materi Depresi & Kesehatan Mental*',
     '',
     'Kakak bisa menemukan materi pembelajaran terkait depresi dan kesehatan mental di channel resmi:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Silakan cari menggunakan kata kunci: depresi, kecemasan, stres, atau kesehatan mental.'
+  ].join('\n'),
+
+  cemas: [
+    '💭 *Materi Kecemasan & Overthinking*',
+    '',
+    'Untuk topik kecemasan, pikiran berlebihan, dan ketegangan emosi, kakak bisa cek channel resmi berikut:',
+    `• ${YOUTUBE_CHANNEL_URL}`,
+    '',
+    'Coba gunakan kata kunci: cemas, overthinking, takut, khawatir, atau emosi.'
   ].join('\n'),
 
   remaja: [
     '👨‍👩‍👧 *Materi Remaja, Parenting, dan Pengembangan Diri*',
     '',
     'Untuk topik remaja, parenting, dan pengembangan diri, kakak bisa belajar melalui channel resmi berikut:',
-    '• https://www.youtube.com/@DanangBaskoroPsikolog',
+    `• ${YOUTUBE_CHANNEL_URL}`,
     '',
     'Silakan telusuri video sesuai kebutuhan pembelajaran kakak.'
   ].join('\n'),
@@ -152,6 +168,7 @@ const STATIC_RESPONSES = {
     `• Koneksi WhatsApp: ${isConnected ? 'terhubung' : 'belum terhubung'}`,
     `• Uptime: ${getUptime()}`,
     `• Admin: ${ADMIN_CONTACT}`,
+    `• YouTube API: ${YOUTUBE_API_KEY && YOUTUBE_CHANNEL_ID ? 'aktif' : 'belum diset'}`,
     '',
     'Bot aktif dan siap membantu pencarian media pembelajaran psikologi.'
   ].join('\n'),
@@ -185,6 +202,7 @@ function buildTermsText() {
     'Data pengguna hanya digunakan untuk keperluan operasional layanan dan tidak dibagikan kepada pihak lain, kecuali bila diwajibkan oleh hukum.'
   ].join('\n');
 }
+
 function normalizeText(text = '') {
   return text
     .toLowerCase()
@@ -235,6 +253,15 @@ function detectQuickReply(text) {
   const normalized = normalizeText(text);
 
   if (['menu', 'help', 'bantuan'].includes(normalized)) return STATIC_RESPONSES.menu;
+  if (['tentang', 'info', 'informasi'].includes(normalized)) return STATIC_RESPONSES.tentang;
+  if (['channel', 'youtube', 'kanal'].includes(normalized)) return STATIC_RESPONSES.channel;
+  if (['video'].includes(normalized)) return STATIC_RESPONSES.video;
+  if (['topik', 'materi', 'kategori'].includes(normalized)) return STATIC_RESPONSES.topik;
+  if (['trauma'].includes(normalized)) return STATIC_RESPONSES.trauma;
+  if (['healing', 'self healing'].includes(normalized)) return STATIC_RESPONSES.healing;
+  if (['depresi', 'mental health', 'kesehatan mental'].includes(normalized)) return STATIC_RESPONSES.depresi;
+  if (['cemas', 'kecemasan', 'overthinking'].includes(normalized)) return STATIC_RESPONSES.cemas;
+  if (['remaja', 'parenting'].includes(normalized)) return STATIC_RESPONSES.remaja;
   if (['admin', 'cs', 'kontak admin'].includes(normalized)) return STATIC_RESPONSES.admin;
   if (['status', 'status bot', 'cek bot'].includes(normalized)) {
     return typeof STATIC_RESPONSES.status === 'function'
@@ -242,9 +269,9 @@ function detectQuickReply(text) {
       : STATIC_RESPONSES.status;
   }
   if (['tos', 'syarat', 'ketentuan', 'terms'].includes(normalized)) {
-    return typeof STATIC_RESPONSES.tos === 'function'
-      ? STATIC_RESPONSES.tos()
-      : STATIC_RESPONSES.tos;
+    return typeof STATIC_RESPONSES.ketentuan === 'function'
+      ? STATIC_RESPONSES.ketentuan()
+      : STATIC_RESPONSES.ketentuan;
   }
 
   return null;
@@ -268,6 +295,117 @@ function buildAiHistory(jid) {
     role: item.role,
     content: item.text
   }));
+}
+
+function detectTopic(text = '') {
+  const msg = normalizeText(text);
+
+  const topicMap = [
+    {
+      topic: 'trauma',
+      keywords: ['trauma', 'luka batin', 'inner child', 'masa kecil', 'pemulihan emosi']
+    },
+    {
+      topic: 'self healing',
+      keywords: ['self healing', 'healing', 'pemulihan diri', 'bertumbuh', 'menyembuhkan diri']
+    },
+    {
+      topic: 'depresi',
+      keywords: ['depresi', 'stres berat', 'murung', 'putus asa']
+    },
+    {
+      topic: 'kecemasan',
+      keywords: ['cemas', 'kecemasan', 'overthinking', 'takut', 'khawatir', 'panic', 'panik']
+    },
+    {
+      topic: 'remaja',
+      keywords: ['remaja', 'anak', 'parenting', 'orang tua', 'pola asuh']
+    },
+    {
+      topic: 'relasi',
+      keywords: ['relasi', 'hubungan', 'pasangan', 'pernikahan', 'komunikasi']
+    },
+    {
+      topic: 'pengembangan diri',
+      keywords: ['pengembangan diri', 'motivasi', 'mindset', 'percaya diri', 'bertumbuh']
+    }
+  ];
+
+  for (const item of topicMap) {
+    if (item.keywords.some((keyword) => msg.includes(keyword))) {
+      return item.topic;
+    }
+  }
+
+  return null;
+}
+
+async function searchYoutubeVideosByTopic(topic, maxResults = 5) {
+  if (!YOUTUBE_API_KEY || !YOUTUBE_CHANNEL_ID) {
+    return [];
+  }
+
+  try {
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      timeout: 20000,
+      params: {
+        key: YOUTUBE_API_KEY,
+        part: 'snippet',
+        channelId: YOUTUBE_CHANNEL_ID,
+        q: topic,
+        type: 'video',
+        order: 'relevance',
+        maxResults
+      }
+    });
+
+    const items = response.data?.items || [];
+
+    return items.map((item) => ({
+      videoId: item.id?.videoId || '',
+      title: item.snippet?.title || 'Video tanpa judul',
+      description: item.snippet?.description || '',
+      publishedAt: item.snippet?.publishedAt || '',
+      thumbnail: item.snippet?.thumbnails?.medium?.url || '',
+      url: item.id?.videoId ? `https://www.youtube.com/watch?v=${item.id.videoId}` : ''
+    })).filter((item) => item.videoId && item.url);
+  } catch (error) {
+    console.error('YouTube API error:', error.response?.data || error.message);
+    return [];
+  }
+}
+
+function buildYoutubeRecommendationText(topic, videos = []) {
+  if (!videos.length) {
+    return [
+      `Maaf kak, saya belum menemukan video yang cocok untuk topik *${topic}*.`,
+      '',
+      'Kakak bisa coba gunakan kata kunci yang lebih spesifik seperti:',
+      '• trauma',
+      '• self healing',
+      '• depresi',
+      '• kecemasan',
+      '• remaja',
+      '• parenting',
+      '',
+      `Atau langsung buka channel resmi berikut ya:`,
+      `${YOUTUBE_CHANNEL_URL}`
+    ].join('\n');
+  }
+
+  const lines = [
+    `Berikut rekomendasi video untuk topik *${topic}* ya kak 😊`,
+    ''
+  ];
+
+  videos.slice(0, 5).forEach((video, index) => {
+    lines.push(`${index + 1}. *${video.title}*`);
+    lines.push(video.url);
+    lines.push('');
+  });
+
+  lines.push('Kalau kak mau, saya juga bisa carikan topik lain yang lebih spesifik.');
+  return lines.join('\n');
 }
 
 async function askAI(jid, userText) {
@@ -313,9 +451,9 @@ async function sendMainMenu(sock, jid) {
     '',
     `Ini adalah media pembelajaran psikologi bersama *Dr. Danang Baskoro, Psikolog*.`,
     '',
-    'Kakak bisa belajar berbagai topik seperti trauma, self healing, depresi, relasi, dan pengembangan diri.',
+    'Kakak bisa belajar berbagai topik seperti trauma, self healing, depresi, kecemasan, relasi, dan pengembangan diri.',
     '',
-    'Silakan langsung ketik topik yang ingin dipelajari ya 😊'
+    'Silakan pilih menu di bawah atau langsung ketik topik yang ingin dipelajari ya 😊'
   ].join('\n');
 
   try {
@@ -334,6 +472,7 @@ async function sendMainMenu(sock, jid) {
     await sock.sendMessage(jid, { text: STATIC_RESPONSES.menu });
   }
 }
+
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
@@ -397,11 +536,13 @@ async function startBot() {
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
+    let jid = null;
+
     try {
       const m = messages?.[0];
       if (!m?.message || m.key.fromMe) return;
 
-      const jid = m.key.remoteJid;
+      jid = m.key.remoteJid;
       const messageText = extractIncomingText(m);
       if (!messageText) return;
 
@@ -417,16 +558,27 @@ async function startBot() {
       const quickReply = detectQuickReply(messageText);
       if (quickReply) {
         await sock.sendMessage(jid, { text: quickReply });
-        if (normalized in { menu: 1, help: 1, bantuan: 1 }) {
+
+        if (['menu', 'help', 'bantuan'].includes(normalized)) {
           await sendMainMenu(sock, jid);
         }
+
         console.log(`✅ Quick reply terkirim ke ${jid}`);
         return;
       }
 
-      if (['halo', 'hai', 'hi', 'p', 'permisi', 'assalamualaikum'].includes(normalized)) {
+      if (['halo', 'hai', 'hi', 'p', 'permisi', 'assalamualaikum', 'assalamu\'alaikum'].includes(normalized)) {
         await sendMainMenu(sock, jid);
         console.log(`✅ Greeting menu terkirim ke ${jid}`);
+        return;
+      }
+
+      const detectedTopic = detectTopic(messageText);
+      if (detectedTopic) {
+        const videos = await searchYoutubeVideosByTopic(detectedTopic, 5);
+        const recommendationText = buildYoutubeRecommendationText(detectedTopic, videos);
+        await sock.sendMessage(jid, { text: recommendationText });
+        console.log(`✅ Rekomendasi YouTube terkirim ke ${jid} untuk topik: ${detectedTopic}`);
         return;
       }
 
@@ -439,13 +591,14 @@ async function startBot() {
     } catch (error) {
       console.error('❌ Gagal memproses pesan:', error);
       try {
-        const jid = messages?.[0]?.key?.remoteJid;
-        if (jid) {
+        if (jid && activeSocket) {
           await activeSocket.sendMessage(jid, {
             text: `Maaf kak, sistem sedang gangguan. Silakan coba lagi atau hubungi admin di ${ADMIN_CONTACT} ya 🙏`
           });
         }
-      } catch (_) {}
+      } catch (sendError) {
+        console.error('❌ Gagal kirim pesan fallback:', sendError?.message || sendError);
+      }
     }
   });
 }
@@ -520,8 +673,30 @@ app.get('/health', (req, res) => {
     uptime: getUptime(),
     bot: BOT_NAME,
     aiEnabled: !!AI_ENDPOINT && !!AI_TOKEN,
-    aiEndpoint: AI_ENDPOINT
+    aiEndpoint: AI_ENDPOINT,
+    youtubeConfigured: !!YOUTUBE_API_KEY && !!YOUTUBE_CHANNEL_ID,
+    youtubeChannelUrl: YOUTUBE_CHANNEL_URL
   });
+});
+
+app.get('/youtube/test', async (req, res) => {
+  try {
+    const topic = String(req.query.topic || 'trauma').trim();
+    const videos = await searchYoutubeVideosByTopic(topic, 5);
+
+    return res.status(200).json({
+      ok: true,
+      topic,
+      channelId: YOUTUBE_CHANNEL_ID || null,
+      count: videos.length,
+      videos
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+  }
 });
 
 app.get('/', (req, res) => {
@@ -539,10 +714,10 @@ app.get('/', (req, res) => {
         <div class="container">
           <h1>${BOT_NAME}</h1>
           <div class="badge ok">Bot terhubung ke WhatsApp ✅</div>
-          
+
           <p>
-            Bot aktif dan siap membantu pengguna dalam menemukan 
-            media pembelajaran psikologi bersama 
+            Bot aktif dan siap membantu pengguna dalam menemukan
+            media pembelajaran psikologi bersama
             <strong>Dr. Danang Baskoro, Psikolog</strong>.
           </p>
 
@@ -566,17 +741,28 @@ app.get('/', (req, res) => {
               <strong>Admin</strong><br/>
               ${ADMIN_CONTACT}
             </div>
+
+            <div class="card">
+              <strong>YouTube API</strong><br/>
+              ${YOUTUBE_API_KEY && YOUTUBE_CHANNEL_ID ? 'Aktif' : 'Belum diset'}
+            </div>
+
+            <div class="card">
+              <strong>Channel YouTube</strong><br/>
+              ${YOUTUBE_CHANNEL_URL}
+            </div>
           </div>
 
-          <div class="card" style="margin-top:16px;">
-            <strong>Fitur Utama</strong><br/>
+          <div class="card" style="margin-top:16px; text-align:left;">
+            <strong>Fitur Utama</strong><br/><br/>
             • Rekomendasi video psikologi berdasarkan topik<br/>
             • Akses channel YouTube Dr. Danang Baskoro<br/>
-            • Panduan pembelajaran (trauma, healing, depresi, dll)
+            • Panduan pembelajaran (trauma, healing, depresi, dll)<br/>
+            • Fallback ke AI untuk pertanyaan umum
           </div>
 
           <p class="muted" style="margin-top:18px;">
-            Catatan: Layanan ini bersifat edukatif dan tidak menggantikan 
+            Catatan: Layanan ini bersifat edukatif dan tidak menggantikan
             konsultasi atau penanganan profesional secara langsung.
           </p>
         </div>
@@ -584,6 +770,7 @@ app.get('/', (req, res) => {
       </html>
     `);
   }
+
   if (qrCodeString) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrCodeString)}`;
     return res.send(`
@@ -612,39 +799,39 @@ app.get('/', (req, res) => {
   }
 
   return res.send(`
-  <!DOCTYPE html>
-  <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${BOT_NAME}</title>
-    <style>${baseStyle}</style>
-    <meta http-equiv="refresh" content="3" />
-  </head>
-  <body>
-    <div class="container">
-      <h1>${BOT_NAME}</h1>
-      
-      <div class="badge">Menyiapkan sesi WhatsApp ⏳</div>
-      
-      <p>
-        Bot sedang menyiapkan koneksi WhatsApp. 
-        Silakan tunggu beberapa detik sampai QR code muncul.
-      </p>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${BOT_NAME}</title>
+      <style>${baseStyle}</style>
+      <meta http-equiv="refresh" content="3" />
+    </head>
+    <body>
+      <div class="container">
+        <h1>${BOT_NAME}</h1>
 
-      <p>
-        Setelah terhubung, bot akan membantu pengguna menemukan 
-        media pembelajaran psikologi bersama 
-        <strong>Dr. Danang Baskoro, Psikolog</strong>.
-      </p>
+        <div class="badge">Menyiapkan sesi WhatsApp ⏳</div>
 
-      <p class="muted">
-        Mode AI aktif • Fokus pada edukasi psikologi dan rekomendasi materi pembelajaran
-      </p>
-    </div>
-  </body>
-  </html>
-`);
+        <p>
+          Bot sedang menyiapkan koneksi WhatsApp.
+          Silakan tunggu beberapa detik sampai QR code muncul.
+        </p>
+
+        <p>
+          Setelah terhubung, bot akan membantu pengguna menemukan
+          media pembelajaran psikologi bersama
+          <strong>Dr. Danang Baskoro, Psikolog</strong>.
+        </p>
+
+        <p class="muted">
+          Mode AI aktif • Fokus pada edukasi psikologi dan rekomendasi materi pembelajaran
+        </p>
+      </div>
+    </body>
+    </html>
+  `);
 });
 
 startBot().catch((err) => {
