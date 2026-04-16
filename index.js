@@ -18,7 +18,7 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 const AUTH_DIR = process.env.AUTH_DIR || './auth';
-const BRAND_NAME = process.env.BRAND_NAME || 'PanelSosial';
+const BRAND_NAME = process.env.BRAND_NAME || 'Asisten AI Dr. Danang Baskoro, Psikolog';
 const BOT_NAME = process.env.BOT_NAME || `${BRAND_NAME} CS`;
 const ADMIN_CONTACT = process.env.ADMIN_CONTACT || '-';
 
