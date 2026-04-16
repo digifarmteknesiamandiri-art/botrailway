@@ -23,8 +23,8 @@ const BRAND_NAME = process.env.BRAND_NAME || 'Asisten AI Dr. Danang Baskoro, Psi
 const BOT_NAME = process.env.BOT_NAME || `${BRAND_NAME}`;
 const ADMIN_CONTACT = process.env.ADMIN_CONTACT || '-';
 
-const AI_ENDPOINT = process.env.AI_ENDPOINT || 'https://mute-leaf-0298.digifarmteknesiamandiri.workers.dev/chat';
-const AI_TOKEN = process.env.AI_TOKEN || '123123';
+const AI_ENDPOINT = process.env.AI_ENDPOINT || '';
+const AI_TOKEN = process.env.AI_TOKEN || '';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
 const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || '';
